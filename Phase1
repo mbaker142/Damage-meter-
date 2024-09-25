@@ -1,0 +1,82 @@
+-- Create the frame for the Damage Meter
+local DamageMeterFrame = CreateFrame("Frame", "DamageMeterFrame", UIParent)
+DamageMeterFrame:SetSize(300, 100)
+DamageMeterFrame:SetPoint("CENTER")
+DamageMeterFrame:Hide()
+
+local title = DamageMeterFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+title:SetPoint("TOP", DamageMeterFrame, "TOP", 0, -10)
+title:SetText("Damage Meter")
+
+-- Text area for displaying DPS
+local dpsText = DamageMeterFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+dpsText:SetPoint("CENTER", DamageMeterFrame, "CENTER", 0, 0)
+dpsText:SetText("Current DPS: 0")
+
+-- Variables for tracking damage and time
+local totalDamage = 0
+local combatStartTime = 0
+
+-- Event listener function for tracking damage
+local function OnEvent(self, event, ...)
+    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+        local _, subEvent, _, sourceGUID, _, _, _, _, _, _, _, spellID, spellName, _, amount = CombatLogGetCurrentEventInfo()
+        
+        if subEvent == "SPELL_DAMAGE" and sourceGUID == UnitGUID("player") then
+            totalDamage = totalDamage + amount
+        elseif subEvent == "SWING_DAMAGE" and sourceGUID == UnitGUID("player") then
+            totalDamage = totalDamage + select(12, CombatLogGetCurrentEventInfo())
+        end
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        -- Combat starts
+        combatStartTime = GetTime()
+        totalDamage = 0
+        DamageMeterFrame:Show()
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        -- Combat ends
+        local combatDuration = GetTime() - combatStartTime
+        local dps = totalDamage / combatDuration
+        dpsText:SetText(string.format("Current DPS: %.2f", dps))
+        DamageMeterFrame:Hide()
+    end
+end
+
+-- Register events for combat tracking
+DamageMeterFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+DamageMeterFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+DamageMeterFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+DamageMeterFrame:SetScript("OnEvent", OnEvent)
+
+-- Function to suggest improvements based on rotation
+local function SuggestImprovement(spellHistory)
+    -- Define an optimal rotation (example for a warrior)
+    local optimalRotation = {"Heroic Strike", "Mortal Strike", "Execute"}
+
+    -- Check the player's history against the optimal rotation
+    local suggestion = "Your rotation looks good!"
+
+    for i, spell in ipairs(optimalRotation) do
+        if not spellHistory[i] or spellHistory[i] ~= spell then
+            suggestion = "Try using " .. spell .. " more often."
+            break
+        end
+    end
+
+    return suggestion
+end
+
+-- Example of adding rotation feedback
+local rotationText = DamageMeterFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+rotationText:SetPoint("BOTTOM", DamageMeterFrame, "BOTTOM", 0, 20)
+rotationText:SetText("Rotation Advice: ")
+
+local function OnRotationCheck(self, event)
+    -- This would be based on your spell cast history, here is a placeholder
+    local spellHistory = {"Heroic Strike", "Mortal Strike"}
+    local advice = SuggestImprovement(spellHistory)
+    rotationText:SetText("Rotation Advice: " .. advice)
+end
+
+-- Register rotation improvement check on combat end
+DamageMeterFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+DamageMeterFrame:SetScript("OnEvent", OnRotationCheck)
