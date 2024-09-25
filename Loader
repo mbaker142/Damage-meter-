@@ -1,8 +1,6 @@
-## Interface: 90002
-## Title: Damage Meter with Rotation Suggestions
-## Notes: A simple damage meter with rotation analysis
-## Author: YourName
-## Version: 1.0
-## SavedVariables:
+## Interface: 30401
+## Title: Custom Damage Meter
+## Notes: A custom damage meter addon
+## Author: Your Name
 
-DamageMeter.lua
+CustomDamageMeter.lua
