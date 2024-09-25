@@ -1,0 +1,53 @@
+<Ui xmlns="http://www.w3.org/1999/xhtml">
+    <Frame name="CustomDamageMeterFrame" movable="true" hidden="true">
+        <Size>
+            <AbsDimension x="200" y="100"/>
+        </Size>
+        <Anchors>
+            <Anchor point="CENTER">
+                <Offset>
+                    <AbsDimension x="0" y="0"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+        <Backdrop>
+            <Background>
+                <Color r="0" g="0" b="0" a="0.8"/>
+            </Background>
+        </Backdrop>
+
+        <Scripts>
+            <OnLoad>
+                self:RegisterForDrag("LeftButton")
+                self:SetScript("OnDragStart", self.StartMoving)
+                self:SetScript("OnDragStop", self.StopMovingOrSizing)
+            </OnLoad>
+        </Scripts>
+
+        <Button name="CustomDamageMeterToggleButton" inherits="UIPanelButtonTemplate">
+            <Size>
+                <AbsDimension x="180" y="30"/>
+            </Size>
+            <Anchors>
+                <Anchor point="TOP" relativeTo="$parent" relativePoint="TOP" offset="0" offsetY=-10/>
+            </Anchors>
+            <Text>
+                Enable/Disable Addon
+            </Text>
+            <Scripts>
+                <OnClick>
+                    CustomDamageMeter:Toggle()
+                </OnClick>
+            </Scripts>
+        </Button>
+
+        <FontString name="CustomDamageMeterStatus" font="GameFontNormal" text="Addon is disabled" justifyH="CENTER">
+            <Size>
+                <AbsDimension x="180" y="20"/>
+            </Size>
+            <Anchors>
+                <Anchor point="TOP" relativeTo="CustomDamageMeterToggleButton" relativePoint="BOTTOM" offset="0" offsetY=-10/>
+            </Anchors>
+        </FontString>
+    </Frame>
+</Ui>
