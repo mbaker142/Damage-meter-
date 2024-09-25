@@ -193,3 +193,106 @@ DamageMeterFrame:SetScript("OnEvent", OnEvent)
 
 -- Get player's class and specialization on login/reload
 playerClass, playerSpec = GetPlayerClassAndSpec()
+
+
+-- Declare the addon table
+CustomDamageMeter = {}
+
+-- Variable to track if the addon is enabled or disabled
+CustomDamageMeter.isEnabled = true
+
+-- Variable to hold damage data
+CustomDamageMeter.damageData = {}
+
+-- Function to toggle the addon on and off
+function CustomDamageMeter:Toggle()
+    self.isEnabled = not self.isEnabled
+    if self.isEnabled then
+        CustomDamageMeterFrameStatus:SetText("Addon is enabled")
+        -- Start damage tracking
+        self:StartTracking()
+    else
+        CustomDamageMeterFrameStatus:SetText("Addon is disabled")
+        -- Stop damage tracking
+        self:StopTracking()
+    end
+end
+
+-- Function to start damage tracking
+function CustomDamageMeter:StartTracking()
+    self.damageData = {} -- Reset the damage data
+    self:UpdateOutput()  -- Update the output display
+    print("Damage tracking started.")
+end
+
+-- Function to stop damage tracking
+function CustomDamageMeter:StopTracking()
+    print("Damage tracking stopped.")
+    -- Here, you might want to output or log the damage data
+end
+
+-- Function to update the output display
+function CustomDamageMeter:UpdateOutput()
+    local outputText = ""
+    for name, data in pairs(self.damageData) do
+        outputText = outputText .. name .. ": " .. data.totalDamage .. " damage\n"
+    end
+
+    if outputText == "" then
+        outputText = "No damage dealt yet."
+    end
+
+    CustomDamageMeterOutput:SetText(outputText)
+end
+
+-- Event handler for combat log updates
+local function OnCombatLogEvent(_, event, ...)
+    if not CustomDamageMeter.isEnabled then return end
+
+    local timestamp, eventType, _, sourceGUID, sourceName, _, _, destGUID, destName, _, _, spellID, spellName, spellSchool, amount = ...
+    
+    -- Check if the event is a damage event from the player
+    if eventType == "SPELL_DAMAGE" and sourceGUID == UnitGUID("player") then
+        -- Initialize player damage data if it doesn't exist
+        if not CustomDamageMeter.damageData[sourceName] then
+            CustomDamageMeter.damageData[sourceName] = { totalDamage = 0, spellCount = {} }
+        end
+
+        -- Update total damage
+        CustomDamageMeter.damageData[sourceName].totalDamage = CustomDamageMeter.damageData[sourceName].totalDamage + amount
+
+        -- Update spell damage count
+        if not CustomDamageMeter.damageData[sourceName].spellCount[spellName] then
+            CustomDamageMeter.damageData[sourceName].spellCount[spellName] = 0
+        end
+        CustomDamageMeter.damageData[sourceName].spellCount[spellName] = CustomDamageMeter.damageData[sourceName].spellCount[spellName] + amount
+
+        -- Update the output display with new data
+        CustomDamageMeter:UpdateOutput()
+
+        -- Debug output to show damage dealt
+        print(sourceName .. " dealt " .. amount .. " damage with " .. spellName)
+    end
+end
+
+-- Event to show the frame when the player logs in
+local frame = CreateFrame("Frame")
+frame:RegisterEvent("PLAYER_LOGIN")
+frame:SetScript("OnEvent", function(self, event)
+    CustomDamageMeter:ShowFrame()
+end)
+
+-- Function to show the addon frame
+function CustomDamageMeter:ShowFrame()
+    CustomDamageMeterFrame:Show()
+end
+
+-- Function to hide the addon frame
+function CustomDamageMeter:HideFrame()
+    CustomDamageMeterFrame:Hide()
+end
+
+-- Register for combat log events
+local combatLogFrame = CreateFrame("Frame")
+combatLogFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+combatLogFrame:SetScript("OnEvent", OnCombatLogEvent)
